@@ -57,6 +57,16 @@ The application is just a single executable.
 
 remoteRotator does not have any runtime dependencies.
 
+## Building a Release
+
+With Go and UPX installed, build an optimized release binary for the current platform with:
+
+```bash
+make release
+```
+
+The release target generates required code, strips debug symbols, and compresses the binary with UPX. UPX is skipped on macOS.
+
 ## Getting started
 
 remoteRotator provides a series of nested commands and flags.

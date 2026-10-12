@@ -31,6 +31,11 @@ js-development:
 generate:
 	go generate ./...
 
+# Generate code and build the optimized release binary.
+release:
+	$(MAKE) generate
+	$(MAKE) dist
+
 # strip off dwraf table - used for travis CI
 dist:
 	go build -v -ldflags="-w -s -X github.com/dh1tw/remoteRotator/cmd.commitHash=${COMMIT} \
@@ -70,4 +75,4 @@ install-deps:
 clean:
 	-@rm remoteRotator remoteRotator-v*
 
-.PHONY: build vet lint clean install-deps generate js-production js-development
+.PHONY: build release vet lint clean install-deps generate js-production js-development
