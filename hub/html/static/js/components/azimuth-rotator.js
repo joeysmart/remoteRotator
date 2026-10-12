@@ -35,15 +35,15 @@ var AzimuthRotator = {
             touchOngoing: false,
             canvasOptions: {
                 scale: this.canvasSize / 100,
-                color: "#FFF",
-                lineWidth: 3,
+                color: "#8FA8AD",
+                lineWidth: 1.25,
             },
             headingNeedleOptions: {
-                needleColor: "red",
-                needleColorRing: "yellow",
+                needleColor: "#52D6C5",
+                needleColorRing: "#E9FFFB",
             },
             presetNeedleOptions: {
-                color: "yellow",
+                color: "#FFB454",
             }
         }
     },
@@ -228,79 +228,61 @@ var AzimuthRotator = {
             }
         },
         drawCompass() {
-            // draw the base a compass ring with 45° ticks
+            var scale = this.canvasOptions.scale;
+            var center = 50 * scale;
+            var radius = 45 * scale;
+            var ctx = this.ctx;
 
-            var cx = 100 * this.canvasOptions.scale; //canvas x size
-            var cy = 100 * this.canvasOptions.scale; //canvas y size
-            var r = 45 * this.canvasOptions.scale; //radius
-            var font = this.headingFont();
-            var color = this.canvasOptions.color;
-            var needleColor = this.canvasOptions.needleColor;
-            var needleColorRing = this.canvasOptions.needleColorRing;
-            var lineWidth = this.canvasOptions.lineWidth;
+            var face = ctx.createRadialGradient(center, center, 8 * scale, center, center, radius);
+            face.addColorStop(0, "#14272B");
+            face.addColorStop(1, "#091316");
+            ctx.beginPath();
+            ctx.arc(center, center, radius, 0, 2 * Math.PI);
+            ctx.fillStyle = face;
+            ctx.fill();
+            ctx.strokeStyle = "#385158";
+            ctx.lineWidth = this.canvasOptions.lineWidth * scale;
+            ctx.stroke();
 
-            var lstx = r - (r * 0.22); //large tick start x
-            var lsty = -r + (r * 0.22); //large tick start y
-            var letx = r; //large tick end x
-            var lety = -r; //large tick end y
-            var sstx = r - (r * 0.11); //small tick start x
-            var ssty = -r + (r * 0.11); //small tick start y
-            var setx = r; //small tick end x
-            var sety = -r; //small tick end y
+            ctx.beginPath();
+            ctx.arc(center, center, 34 * scale, 0, 2 * Math.PI);
+            ctx.strokeStyle = "rgba(143, 168, 173, 0.16)";
+            ctx.lineWidth = scale;
+            ctx.stroke();
 
-            //outer ring
-            this.ctx.beginPath();
-            this.ctx.strokeStyle = color;
-            this.ctx.lineWidth = lineWidth;
-            this.ctx.arc(cx / 2, cy / 2, r, 0, 2 * Math.PI);
-            this.ctx.stroke();
-            this.ctx.closePath();
-
-            this.ctx.save();
-
-            //draw 45° and 15° ticks
-            this.ctx.translate(cx / 2, cy / 2);
-            for (i = 1; i <= 360; i++) {
-                ang = Math.PI / 180 * i;
-                sang = Math.sin(ang);
-                cang = Math.cos(ang);
-                //If modulus of divide by 45 is zero then draw an degree marker + numeral
-                if (i % 45 == 0) {
-                    this.ctx.lineWidth = 3;
-                    sx = sang * lstx;
-                    sy = cang * lsty;
-                    ex = sang * letx;
-                    ey = cang * lety;
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(sx, sy);
-                    this.ctx.lineTo(ex, ey);
-                    this.ctx.stroke();
-                }
-                //Else draw every 10deg a small degree marker
-                else if (i % 15 == 0) {
-                    this.ctx.lineWidth = 1;
-                    sx = sang * sstx;
-                    sy = cang * ssty;
-                    ex = sang * setx;
-                    ey = cang * sety;
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(sx, sy);
-                    this.ctx.lineTo(ex, ey);
-                    this.ctx.stroke();
-                }
+            ctx.save();
+            ctx.translate(center, center);
+            for (var degree = 0; degree < 360; degree += 5) {
+                var major = degree % 45 === 0;
+                var medium = !major && degree % 15 === 0;
+                var tickStart = radius - (major ? 8 : medium ? 5 : 2.5) * scale;
+                var angle = degree * Math.PI / 180;
+                ctx.beginPath();
+                ctx.moveTo(Math.sin(angle) * tickStart, -Math.cos(angle) * tickStart);
+                ctx.lineTo(Math.sin(angle) * radius, -Math.cos(angle) * radius);
+                ctx.strokeStyle = major ? "#B8CED0" : "#617A7F";
+                ctx.lineWidth = (major ? 1.6 : medium ? 1 : 0.65) * scale;
+                ctx.stroke();
             }
+            ctx.restore();
 
-            this.ctx.restore();
-
-            //North East South West Labels
             if (this.showLegend) {
-                this.ctx.font = font;
-                this.ctx.fillStyle = color;
-                var txt = "M"; // since we use Monospace font, all letters have the same vertical/horizontal size
-                this.ctx.fillText("N", cx / 2 - this.ctx.measureText(txt).width / 2, 25 * this.canvasOptions.scale);
-                this.ctx.fillText("S", cx / 2 - this.ctx.measureText(txt).width / 2, cy - 17 * this.canvasOptions.scale);
-                this.ctx.fillText("W", 16 * this.canvasOptions.scale, (cy / 2) + this.ctx.measureText(txt).width / 2);
-                this.ctx.fillText("E", cx - 22 * this.canvasOptions.scale, (cy / 2) + this.ctx.measureText(txt).width / 2);
+                var labels = [
+                    { text: "N", degree: 0, color: "#52D6C5" },
+                    { text: "E", degree: 90, color: "#B8CED0" },
+                    { text: "S", degree: 180, color: "#B8CED0" },
+                    { text: "W", degree: 270, color: "#B8CED0" },
+                ];
+                ctx.save();
+                ctx.font = "600 " + Math.max(9, this.canvasSize / 22) + "px Inconsolata";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                labels.forEach(function (label) {
+                    var angle = label.degree * Math.PI / 180;
+                    ctx.fillStyle = label.color;
+                    ctx.fillText(label.text, center + Math.sin(angle) * 27 * scale, center - Math.cos(angle) * 27 * scale);
+                });
+                ctx.restore();
             }
         },
         drawHeadingNeedle: function (heading) {
@@ -315,7 +297,7 @@ var AzimuthRotator = {
             // draw heading digits
             this.ctx.fillStyle = color;
             if ((heading < 130) || (heading > 240)) {
-                this.ctx.fillText(heading + "°", cx / 2 - this.ctx.measureText(heading).width / 2, cy - 30 * this.canvasOptions.scale);
+                this.ctx.fillText(heading + "°", cx / 2 - this.ctx.measureText(heading).width / 2, cy - 25 * this.canvasOptions.scale);
             } else {
                 this.ctx.fillText(heading + "°", cx / 2 - this.ctx.measureText(heading).width / 2, 40 * this.canvasOptions.scale);
             }
@@ -326,32 +308,26 @@ var AzimuthRotator = {
             this.ctx.rotate(heading * Math.PI / 180 + Math.PI);
             this.ctx.beginPath();
             this.ctx.moveTo(-lineWidth, 0);
-            this.ctx.lineTo(0, r);
+            this.ctx.lineTo(0, r - 5 * scale);
             this.ctx.lineTo(lineWidth, 0);
 
             this.ctx.fillStyle = this.headingNeedleOptions.needleColor;
+            this.ctx.shadowColor = this.headingNeedleOptions.needleColor;
+            this.ctx.shadowBlur = 8 * scale;
             this.ctx.closePath();
             this.ctx.fill();
 
             this.ctx.restore();
+            this.ctx.shadowBlur = 0;
 
-            //outer ring around compass needle
+            // Center hub keeps the needle anchored over the dial.
             this.ctx.beginPath();
-            this.ctx.arc(cx / 2, cy / 2, lineWidth, 0, 2 * Math.PI);
-            this.ctx.fillStyle = this.headingNeedleOptions.needleColor;
+            this.ctx.arc(cx / 2, cy / 2, lineWidth * 1.35, 0, 2 * Math.PI);
+            this.ctx.fillStyle = "#102126";
             this.ctx.fill();
             this.ctx.closePath();
-
-            if (this.canvasOptions.drawDigits != null) {
-                var drawDigits = this.canvasOptions.drawDigits;
-            } else {
-                var drawDigits = true;
-            }
-
-            //inner ring around compass needle
-            this.ctx.translate(0, 0);
             this.ctx.beginPath();
-            this.ctx.arc(cx / 2, cy / 2, lineWidth / 2, 0, 2 * Math.PI);
+            this.ctx.arc(cx / 2, cy / 2, lineWidth * 0.7, 0, 2 * Math.PI);
             this.ctx.fillStyle = this.headingNeedleOptions.needleColorRing;
             this.ctx.fill();
             this.ctx.closePath();
@@ -408,7 +384,7 @@ var AzimuthRotator = {
             this.ctx.translate(-cx / 2, -cy / 2);
             this.ctx.arc(cx / 2, cy / 2, r, min, max, false); // outer (filled)
             this.ctx.arc(cx / 2, cy / 2, r - r * 0.22, max, min, true); // outer (unfills it)
-            this.ctx.fillStyle = "rgba(92, 184, 92, 0.5)";
+            this.ctx.fillStyle = "rgba(82, 214, 197, 0.20)";
             this.ctx.fill();
 
             this.ctx.restore();
@@ -433,7 +409,7 @@ var AzimuthRotator = {
             this.ctx.translate(-cx / 2, -cy / 2);
             this.ctx.arc(cx / 2, cy / 2, r, 0, overlap, false); // outer (filled)
             this.ctx.arc(cx / 2, cy / 2, r - r * 0.22, overlap, 0, true); // outer (unfills it)
-            this.ctx.fillStyle = "rgba(66, 139, 202, 0.502)";
+                this.ctx.fillStyle = "rgba(82, 214, 197, 0.20)";
             this.ctx.fill();
 
             this.ctx.restore();
@@ -449,7 +425,7 @@ var AzimuthRotator = {
                 this.ctx.translate(-cx / 2, -cy / 2);
                 this.ctx.arc(cx / 2, cy / 2, r, 0, h, false); // outer (filled)
                 this.ctx.arc(cx / 2, cy / 2, r - r * 0.22, h, 0, true); // outer (unfills it)
-                this.ctx.fillStyle = "rgba(255, 0, 0, 0.8)";
+                this.ctx.fillStyle = "rgba(255, 180, 84, 0.78)";
                 this.ctx.fill();
                 this.ctx.restore();
             }
@@ -461,7 +437,7 @@ var AzimuthRotator = {
             var cy = 100 * scale; //canvas y size
             var r = 45 * scale; //radius
 
-            var color = "rgba(255, 0, 0, 0.8)";
+            var color = "rgba(255, 180, 84, 0.9)";
             var lineWidth = 2;
 
             var radians = this.stop * Math.PI / 180;

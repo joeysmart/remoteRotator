@@ -19,7 +19,7 @@ enabled = true
 
 [rotator]
 type = "yaesu"
-name = "myRotator"
+name = "HexBeam"
 portname = "/dev/ttyACM0"
 baudrate = 9600
 has-azimuth = true
