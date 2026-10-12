@@ -1,0 +1,17 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch remoteRotator web (LAN)",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "server",
+                "lan","-w", "0.0.0.0", "-P", "/dev/ttyACM0", "-t", "yaesu"
+            ]
+        }
+    ]
+}
